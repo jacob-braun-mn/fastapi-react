@@ -14,6 +14,9 @@ origins = ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -55,7 +58,17 @@ async def create_transaction(transaction: TransactionBase, db: db_dependency):
     return db_transaction
 
 
-@app.get("/transactions", response_model=List[TransactionModel])
+@app.get("/transactions/", response_model=List[TransactionModel])
 async def read_transactions(db: db_dependency, skip: int = 0, limit: int = 100):
     transactions = db.query(models.Transaction).offset(skip).limit(limit).all()
     return transactions
+
+
+@app.delete("/transactions/{tid}")
+async def delete_transaction(db: db_dependency, tid):
+    transaction = (
+        db.query(models.Transaction).filter(models.Transaction.id == tid).first()
+    )
+    db.delete(transaction)
+    db.commit()
+    return {"recordDeleted": True}
